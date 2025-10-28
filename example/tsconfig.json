@@ -1,0 +1,10 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "paths": {
+      "@batch.com/expo-plugin": ["../src/index"],
+      "@batch.com/expo-plugin/*": ["../src/*"]
+    }
+  }
+}
