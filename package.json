@@ -13,7 +13,13 @@
     "prepublishOnly": "expo-module prepublishOnly",
     "expo-module": "expo-module",
     "open:ios": "xed example/ios",
-    "open:android": "open -a \"Android Studio\" example/android"
+    "open:android": "open -a \"Android Studio\" example/android",
+    "android": "expo run:android",
+    "ios": "expo run:ios"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:BatchLabs/Batch-Expo-Plugin.git"
   },
   "keywords": [
     "react-native",
@@ -21,14 +27,17 @@
     "@batch.com/expo-plugin",
     "BatchExpoPlugin"
   ],
-  "repository": "https://github.com/BatchLabs/Batch-Expo-Plugin",
   "bugs": {
     "url": "https://github.com/BatchLabs/Batch-Expo-Plugin/issues"
   },
   "author": "Batch <arnaud.roland@batch.com> (https://github.com/BatchLabs)",
   "license": "MIT",
   "homepage": "https://github.com/BatchLabs/Batch-Expo-Plugin#readme",
-  "dependencies": {},
+  "dependencies": {
+    "expo": "~54.0.19",
+    "react": "19.1.0",
+    "react-native": "0.81.5"
+  },
   "devDependencies": {
     "@types/react": "~19.1.0",
     "expo-module-scripts": "^5.0.7",

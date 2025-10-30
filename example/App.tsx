@@ -1,73 +1,309 @@
-import { useEvent } from 'expo';
-import BatchExpoPlugin, { BatchExpoPluginView } from '@batch.com/expo-plugin';
-import { Button, SafeAreaView, ScrollView, Text, View } from 'react-native';
+import {
+    Batch,
+    BatchEventAttributes,
+    BatchMessaging,
+    BatchProfile,
+    BatchPush,
+    BatchUser,
+} from '@batch.com/react-native-plugin';
+import React, {
+    FunctionComponent,
+    useCallback,
+    useEffect,
+    useState,
+} from 'react';
+import {
+    Button,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
+} from 'react-native';
+import {
+    BatchEmailSubscriptionState,
+    BatchSMSSubscriptionState,
+} from '@batch.com/react-native-plugin/dist/BatchProfileAttributeEditor';
 
-export default function App() {
-  const onChangePayload = useEvent(BatchExpoPlugin, 'onChange');
+const PluginTests: FunctionComponent = () => {
+    const [pushToken, setPushToken] = useState('');
+    const [installationID, setInstallationID] = useState('');
+    const [identifier, setIdentifier] = useState<string | undefined>('');
+    const [region, setRegion] = useState<string | undefined>('');
+    const [language, setLanguage] = useState<string | undefined>('');
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.container}>
-        <Text style={styles.header}>Module API Example</Text>
-        <Group name="Constants">
-          <Text>{BatchExpoPlugin.PI}</Text>
-        </Group>
-        <Group name="Functions">
-          <Text>{BatchExpoPlugin.hello()}</Text>
-        </Group>
-        <Group name="Async functions">
-          <Button
-            title="Set value"
-            onPress={async () => {
-              await BatchExpoPlugin.setValueAsync('Hello from JS!');
-            }}
-          />
-        </Group>
-        <Group name="Events">
-          <Text>{onChangePayload?.value}</Text>
-        </Group>
-        <Group name="Views">
-          <BatchExpoPluginView
-            url="https://www.example.com"
-            onLoad={({ nativeEvent: { url } }) => console.log(`Loaded: ${url}`)}
-            style={styles.view}
-          />
-        </Group>
-      </ScrollView>
-    </SafeAreaView>
-  );
-}
+    const getInstallationId = async () => {
+        const iid = await BatchUser.getInstallationID();
+        setInstallationID(iid);
+    };
 
-function Group(props: { name: string; children: React.ReactNode }) {
-  return (
-    <View style={styles.group}>
-      <Text style={styles.groupHeader}>{props.name}</Text>
-      {props.children}
-    </View>
-  );
-}
+    const getLastPushToken = async () => {
+        const lastPushToken = await BatchPush.getLastKnownPushToken();
+        setPushToken(lastPushToken);
+    };
 
-const styles = {
-  header: {
-    fontSize: 30,
-    margin: 20,
-  },
-  groupHeader: {
-    fontSize: 20,
-    marginBottom: 20,
-  },
-  group: {
-    margin: 20,
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 20,
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#eee',
-  },
-  view: {
-    flex: 1,
-    height: 200,
-  },
+    const getIdentifier = async () => {
+        const userId = await BatchUser.getIdentifier();
+        setIdentifier(userId);
+    };
+
+    const getRegion = async () => {
+        setRegion(await BatchUser.getRegion());
+    };
+
+    const getLanguage = async () => {
+        setLanguage(await BatchUser.getLanguage());
+    };
+
+    const getData = useCallback(async () => {
+        await getInstallationId();
+        await getLastPushToken();
+        await getIdentifier();
+        await getRegion();
+        await getLanguage();
+    }, []);
+
+    useEffect(() => {
+        getData();
+    }, [getData]);
+
+    const testCustomEvent = async () => {
+        const eventData = new BatchEventAttributes();
+        eventData
+            .put(
+                'delivery_address',
+                new BatchEventAttributes()
+                    .put('number', 43)
+                    .put('street', 'Rue Beaubourg')
+                    .put('zip_code', 75003)
+                    .put('city', 'Paris')
+                    .put('country', 'France'),
+            )
+            .put('number', 43)
+            .putDate('date', new Date().getTime())
+            .put('items_list', [
+                new BatchEventAttributes()
+                    .put('name', 'Basic Tee')
+                    .put('size', 'M')
+                    .put('price', 23.99)
+                    .putURL('item_url', 'https://batch-store.com/basic-tee')
+                    .putURL(
+                        'item_image',
+                        'https://batch-store.com/basic-tee/black/image.png',
+                    )
+                    .put('in_sales', true)
+                    .put(
+                        'level_2',
+                        new BatchEventAttributes()
+                            .put('att_1', 'truc')
+                            .put(
+                                'level_3',
+                                new BatchEventAttributes().put('att_2', 'machin'),
+                            ),
+                    ),
+                new BatchEventAttributes()
+                    .put('name', 'Short socks pack x3')
+                    .put('size', '38-40')
+                    .put('price', 15.99)
+                    .putURL('item_url', 'https://batch-store.com/short-socks-pack-x3')
+                    .putURL(
+                        'item_image',
+                        'https://batch-store.com/short-socks-pack-x3/image.png',
+                    )
+                    .put('in_sales', false),
+            ])
+            .put('metadata', ['first_purchase', 'apple_pay'])
+            .put('$label', 'legacy_label')
+            .put('$tags', ['first_purchase', 'in_promo']);
+        BatchProfile.trackEvent('validated_purchase', eventData).catch(e =>
+            console.log(e),
+        );
+
+        const location = {
+            latitude: 0.4,
+            longitude: 0.523232,
+        };
+        BatchProfile.trackLocation(location);
+    };
+
+    const testCustomData = async () => {
+        const editor = BatchProfile.editor();
+        editor
+            .setAttribute('bootl', false)
+            .setAttribute('string', 'bar')
+            .setDateAttribute('date', new Date().getTime())
+            .setURLAttribute('url', 'https://example.com/test')
+            .setAttribute('int', 1)
+            .setAttribute('double', 2.3)
+            .setAttribute('push_optin', ['opt1', 'opt2'])
+            .addToArray('push_optin', ['foot', 'rugby'])
+            .addToArray('push_optin_cars', 'f1')
+            .removeFromArray('push_optin_cars', ['f2', 'f3'])
+            .setLanguage('pt')
+            .setRegion('BR')
+            .setEmailAddress('test@batch.com')
+            .setEmailMarketingSubscription(BatchEmailSubscriptionState.SUBSCRIBED)
+            .setPhoneNumber('+33688774455')
+            .setSMSMarketingSubscription(BatchSMSSubscriptionState.SUBSCRIBED)
+            .save();
+        await getData();
+    };
+
+    const resetCustomData = async () => {
+        BatchProfile.editor()
+            .setEmailAddress(null)
+            .setPhoneNumber(null)
+            .setRegion(null)
+            .setLanguage(null)
+            .save();
+        BatchUser.clearInstallationData();
+        await getData();
+    };
+
+    return (
+        <ScrollView>
+            <View style={{flex: 1, marginBottom: 16, marginTop:24}}>
+                <Text style={styles.title}>Batch Expo Example</Text>
+                <Text style={styles.margins}>Installation ID: {installationID}</Text>
+                <Text style={styles.margins}>Last push token: {pushToken}</Text>
+                <Text style={styles.margins}>User id: {identifier}</Text>
+                <Text style={styles.margins}>
+                    Region/Language: {region}/{language}
+                </Text>
+
+                {Platform.OS === 'ios' && (
+                    <View style={styles.margins}>
+                        <Button title="Request notif. auth"></Button>
+                    </View>
+                )}
+                <View style={styles.margins}>
+                    <Button title="Test custom event" onPress={testCustomEvent} />
+                </View>
+                <View style={styles.margins}>
+                    <Button title="Test custom data" onPress={testCustomData} />
+                </View>
+                <View style={styles.margins}>
+                    <Button title="Reset custom data" onPress={resetCustomData} />
+                </View>
+                <View style={{flex: 1, flexDirection: 'row', justifyContent: 'center'}}>
+                    <TextInput
+                        placeholder={identifier || 'logged-out'}
+                        onChangeText={newText => setIdentifier(newText)}
+                        defaultValue={identifier}
+                    />
+                    <View style={styles.margins}>
+                        <Button
+                            title="Login"
+                            onPress={() => BatchProfile.identify(identifier || null)}
+                        />
+                    </View>
+                    <View style={styles.margins}>
+                        <Button
+                            title="Logout"
+                            onPress={() => {
+                                BatchProfile.identify(null);
+                                setIdentifier(undefined);
+                            }}
+                        />
+                    </View>
+                </View>
+                <View style={{flex: 1, flexDirection: 'row', justifyContent: 'center'}}>
+                    <View style={styles.margins}>
+                        <Button
+                            title="DnD ON"
+                            onPress={() => BatchMessaging.setNotDisturbed(true)}
+                        />
+                    </View>
+                    <View style={styles.margins}>
+                        <Button
+                            title="DnD OFF"
+                            onPress={() => BatchMessaging.setNotDisturbed(false)}
+                        />
+                    </View>
+                </View>
+                {Platform.OS === 'ios' && (
+                    <View
+                        style={{flex: 1, flexDirection: 'row', justifyContent: 'center'}}>
+                        <View style={styles.margins}>
+                            <Button
+                                title="FG Notif ON"
+                                onPress={() => BatchPush.setShowForegroundNotification(true)}
+                            />
+                        </View>
+                        <View style={styles.margins}>
+                            <Button
+                                title="FG Notif OFF"
+                                onPress={() => BatchPush.setShowForegroundNotification(false)}
+                            />
+                        </View>
+                    </View>
+                )}
+                <View style={styles.margins}>
+                    <Button
+                        title="Show pending message"
+                        onPress={() => BatchMessaging.showPendingMessage()}
+                    />
+                </View>
+                <View style={{flex: 1, flexDirection: 'row', justifyContent: 'center'}}>
+                    <View style={styles.margins}>
+                        <Button title="Opt-in" onPress={() => Batch.optIn()} />
+                    </View>
+                    <View style={styles.margins}>
+                        <Button title="Opt-out" onPress={() => Batch.optOut()} />
+                    </View>
+                </View>
+                <View style={styles.margins}>
+                    <Button
+                        title="Is Opted-Out"
+                        onPress={async () => console.log(await Batch.isOptedOut())}
+                    />
+                </View>
+                <View style={styles.margins}>
+                    <Button
+                        title="Get Tags"
+                        onPress={async () => {
+                            const tags = await BatchUser.getTagCollections();
+                            console.log(tags);
+                        }}
+                    />
+                </View>
+                <View style={styles.margins}>
+                    <Button
+                        title="Get Attributs"
+                        onPress={async () => {
+                            const userAttributes = await BatchUser.getAttributes();
+                            console.log(userAttributes);
+                        }}
+                    />
+                </View>
+            </View>
+        </ScrollView>
+    );
 };
+
+const styles = StyleSheet.create({
+    title: {
+        fontSize: 32,
+        color: '#000',
+        fontWeight: 'bold',
+        marginHorizontal: 16,
+        marginTop: 16,
+    },
+    switchContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginHorizontal: 16,
+        marginVertical: 16,
+    },
+    switchLabel: {
+        fontSize: 16,
+        color: '#000',
+    },
+    margins: {
+        marginHorizontal: 16,
+        marginTop: 16,
+    },
+});
+
+export default PluginTests;

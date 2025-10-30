@@ -10,9 +10,10 @@
     "web": "expo start --web"
   },
   "dependencies": {
-    "expo": "~54.0.18",
+    "expo": "~54.0.21",
     "react": "19.1.0",
-    "react-native": "0.81.5"
+    "react-native": "0.81.5",
+    "@batch.com/react-native-plugin": "./batch.com-react-native-plugin-11.0.0.tgz"
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
