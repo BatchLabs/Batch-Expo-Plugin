@@ -6,17 +6,13 @@ import {
     BATCH_DEFAULT_OPT_OUT_INITIAL_STATE, BATCH_DO_NOT_DISTURB_INITIAL_STATE,
 } from './constants';
 import { Props } from './withReactNativeBatch';
+import {resolveBooleanProps} from "./helpers";
 
 export const modifyAndroidManifest = (modResults: AndroidManifest, props: Props): AndroidManifest => {
-  const profileCustomIdMigrationEnabled =
-    props.enableProfileCustomIDMigration !== undefined ? props.enableProfileCustomIDMigration : BATCH_DEFAULT_PROFILE_CUSTOM_ID_MIGRATION;
-  const profileCustomDataMigrationEnabled =
-    props.enableProfileCustomDataMigration !== undefined
-      ? props.enableProfileCustomDataMigration
-      : BATCH_DEFAULT_PROFILE_CUSTOM_DATA_MIGRATION;
-  const defaultOptedOut = props.enableDefaultOptOut !== undefined ? props.enableDefaultOptOut : BATCH_DEFAULT_OPT_OUT_INITIAL_STATE;
-  const doNotDisturb = props.enableDoNotDisturb !== undefined ? props.enableDoNotDisturb : BATCH_DO_NOT_DISTURB_INITIAL_STATE;
-
+  const profileCustomIdMigrationEnabled = resolveBooleanProps(props.enableProfileCustomIDMigration, BATCH_DEFAULT_PROFILE_CUSTOM_ID_MIGRATION)
+  const profileCustomDataMigrationEnabled = resolveBooleanProps(props.enableProfileCustomDataMigration, BATCH_DEFAULT_PROFILE_CUSTOM_DATA_MIGRATION)
+  const defaultOptedOut = resolveBooleanProps(props.enableDefaultOptOut, BATCH_DEFAULT_OPT_OUT_INITIAL_STATE)
+  const doNotDisturb = resolveBooleanProps(props.enableDoNotDisturb, BATCH_DO_NOT_DISTURB_INITIAL_STATE)
   modResults.manifest?.application?.map(element => {
     if (element['meta-data']) {
       element['meta-data'].push({
