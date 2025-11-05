@@ -4,6 +4,8 @@
 
 The Batch Expo Plugin allows you to build meaningful communication experience in your Android/iOS app through highly personalized push notifications & In-App messages.
 
+This is a config plugin for Expo that automatically sets up the native configuration for the [Batch-React-Native-Plugin](https://github.com/BatchLabs/Batch-React-Native-Plugin) during the `expo prebuild`.
+
 Our [📕 setup documentation](https://doc.batch.com/react-native/prerequisites) details the steps to take for an easy and successful integration.
 
 # Prerequisites
