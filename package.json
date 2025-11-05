@@ -30,7 +30,7 @@
   "bugs": {
     "url": "https://github.com/BatchLabs/Batch-Expo-Plugin/issues"
   },
-  "author": "Batch <arnaud.roland@batch.com> (https://github.com/BatchLabs)",
+  "author": "Batch.com (https://github.com/BatchLabs)",
   "license": "MIT",
   "homepage": "https://github.com/BatchLabs/Batch-Expo-Plugin#readme",
   "dependencies": {
