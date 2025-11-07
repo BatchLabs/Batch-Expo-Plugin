@@ -1,6 +1,6 @@
 {
   "name": "@batch.com/expo-plugin",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Batch.com Expo Plugin",
   "main": "build/index.js",
   "types": "build/index.d.ts",
