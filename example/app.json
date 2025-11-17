@@ -23,8 +23,8 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "expo.modules.batch.example",
-      "googleServicesFile": "./google-services.json"
+      "package": "expo.modules.batch.example"
+      //"googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"
