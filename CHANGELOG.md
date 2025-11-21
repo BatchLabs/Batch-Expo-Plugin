@@ -1,3 +1,12 @@
+UPCOMING
+----
+
+**Core**
+
+- Introduced `androidSmallIconResourceId` and `androidNotificationsColor` configuration options for enhanced notification customization.
+- Fixed an issue where expo prebuild would fail if the Batch API key was not configured.
+
+
 1.0.0
 ----
 
