@@ -17,6 +17,8 @@ export type Props = {
   enableDefaultOptOut?: boolean;
   enableProfileCustomIDMigration?: boolean;
   enableProfileCustomDataMigration?: boolean;
+  androidSmallIconResourceId?: string;
+  androidNotificationsColor?: string;
 };
 /**
  * Apply react-native-batch configuration for Expo SDK 42 projects.

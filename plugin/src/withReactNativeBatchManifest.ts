@@ -59,6 +59,22 @@ export const modifyAndroidManifest = (
           "android:value": String(doNotDisturb),
         },
       });
+      if (props.androidSmallIconResourceId) {
+        element["meta-data"].push({
+          $: {
+            "android:name": "com.batch.android.push.smallicon",
+            "android:resource": props.androidSmallIconResourceId,
+          },
+        });
+      }
+      if (props.androidNotificationsColor) {
+        element["meta-data"].push({
+          $: {
+            "android:name": "com.batch.android.push.color",
+            "android:value": props.androidNotificationsColor,
+          },
+        });
+      }
     }
   });
   return modResults;
