@@ -10,18 +10,22 @@ export const withReactNativeBatchStrings: ConfigPlugin<Props> = (
   props,
 ) => {
   return withStringsXml(config, (config) => {
-    AndroidConfig.Strings.setStringItem(
-      [
-        {
-          $: {
-            name: "BATCH_API_KEY",
-            translatable: "false",
+    if (props.androidApiKey) {
+      AndroidConfig.Strings.setStringItem(
+        [
+          {
+            $: {
+              name: "BATCH_API_KEY",
+              translatable: "false",
+            },
+            _: props.androidApiKey,
           },
-          _: props.androidApiKey,
-        },
-      ],
-      config.modResults,
-    );
+        ],
+        config.modResults,
+      );
+    } else {
+      console.error("⚠️ [Batch] `androidApiKey` cannot be null or undefined.");
+    }
     return config;
   });
 };

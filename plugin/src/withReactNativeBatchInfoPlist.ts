@@ -13,7 +13,11 @@ export const modifyInfoPlist = (
   infoPlist: InfoPlist,
   props: Props,
 ): InfoPlist => {
-  infoPlist.BatchAPIKey = props.iosApiKey;
+  if (props.iosApiKey) {
+    infoPlist.BatchAPIKey = props.iosApiKey;
+  } else {
+    console.error("⚠️ [Batch] `iosApiKey` cannot be null or undefined.");
+  }
   infoPlist.BatchDoNotDisturbInitialState = resolveBooleanProps(
     props.enableDoNotDisturb,
     BATCH_DO_NOT_DISTURB_INITIAL_STATE,
