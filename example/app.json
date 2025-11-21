@@ -31,11 +31,18 @@
     },
     "plugins": [
       [
+        "expo-asset",
+        {
+          "assets": ["./assets/favicon.png"]
+        }
+      ],
+      [
         "../app.plugin.js",
         {
           "androidApiKey": "YOUR_ANDROID_BATCH_API_KEY",
           "iosApiKey": "YOUR_IOS_BATCH_API_KEY",
-          "enableDoNotDisturb": false
+          "androidSmallIconResourceId": "@drawable/favicon",
+          "androidNotificationsColor": "#ffff2189"
         }
       ]
     ]
