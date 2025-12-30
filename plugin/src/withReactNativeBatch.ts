@@ -9,6 +9,7 @@ import { withReactNativeBatchManifest } from "./withReactNativeBatchManifest";
 import { withReactNativeBatchEntitlements } from "./withReactNativeBatchEntitlements";
 import { withReactNativeBatchInfoPlist } from "./withReactNativeBatchInfoPlist";
 import { withReactNativeBatchStrings } from "./withReactNativeBatchStrings";
+import { withReactNativeBatchRichNotifications } from "./withReactNativeBatchRichNotifications";
 
 export type Props = {
   iosApiKey: string;
@@ -19,6 +20,7 @@ export type Props = {
   enableProfileCustomDataMigration?: boolean;
   androidSmallIconResourceId?: string;
   androidNotificationsColor?: string;
+  enableIOSRichNotifications?: boolean;
 };
 /**
  * Apply react-native-batch configuration for Expo SDK 42 projects.
@@ -32,6 +34,7 @@ const withReactNativeBatch: ConfigPlugin<Props | void> = (config, props) => {
   newConfig = withReactNativeBatchStrings(newConfig, _props);
   newConfig = withReactNativeBatchInfoPlist(newConfig, _props);
   newConfig = withReactNativeBatchEntitlements(newConfig);
+  newConfig = withReactNativeBatchRichNotifications(newConfig, _props);
   return newConfig;
 };
 
