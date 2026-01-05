@@ -42,7 +42,8 @@
           "androidApiKey": "YOUR_ANDROID_BATCH_API_KEY",
           "iosApiKey": "YOUR_IOS_BATCH_API_KEY",
           "androidSmallIconResourceId": "@drawable/favicon",
-          "androidNotificationsColor": "#ffff2189"
+          "androidNotificationsColor": "#ffff2189",
+          "enableIOSRichNotifications": true
         }
       ]
     ]
