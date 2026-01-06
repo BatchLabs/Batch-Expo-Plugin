@@ -1,3 +1,11 @@
+UPCOMING
+----
+
+**Core**
+
+- Added `enableIOSRichNotifications` configuration options to enable rich push notifications on iOS.
+
+
 1.1.0
 ----
 
