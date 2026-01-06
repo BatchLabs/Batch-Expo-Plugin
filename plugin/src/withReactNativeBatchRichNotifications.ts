@@ -74,7 +74,7 @@ export const withReactNativeBatchRichNotifications: ConfigPlugin<Props> = (
     const objects = pbxProject.hash.project.objects;
     // Fix to have the target dependency from the app target
     objects["PBXTargetDependency"] = objects["PBXTargetDependency"] || {};
-    objects["PBXContainerItemProxy"] = objects["PBXTargetDependency"] || {};
+    objects["PBXContainerItemProxy"] = objects["PBXContainerItemProxy"] || {};
 
     // Add a new target
     const batchTarget = pbxProject.addTarget(
