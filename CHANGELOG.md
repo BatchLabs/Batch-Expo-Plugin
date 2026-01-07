@@ -3,7 +3,7 @@ UPCOMING
 
 **Core**
 
-- Added `enableIOSRichNotifications` configuration options to enable rich push notifications on iOS.
+- Added iOS rich push notifications support. This can be toggled using the `enableIOSRichNotifications` property in your `app.json`.
 
 
 1.1.0
