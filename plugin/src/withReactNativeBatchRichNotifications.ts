@@ -33,6 +33,7 @@ export const withReactNativeBatchRichNotifications: ConfigPlugin<Props> = (
       console.debug(
         "[Batch] Batch Rich Notifications extension already added. Skipping.",
       );
+      setExtensionVersion(pbxProject, config);
       return config;
     }
     const platformProjectRoot = config.modRequest.platformProjectRoot;
@@ -126,14 +127,13 @@ export const withReactNativeBatchRichNotifications: ConfigPlugin<Props> = (
         }
         buildSettings["CODE_SIGN_ENTITLEMENTS"] = `"${entitlementsFilePath}"`;
         buildSettings["CODE_SIGN_STYLE"] = "Automatic";
-        buildSettings["CURRENT_PROJECT_VERSION"] = 1;
-        buildSettings["MARKETING_VERSION"] = "1.0";
         buildSettings["SWIFT_VERSION"] = swiftVersion || "5.0";
         buildSettings["TARGETED_DEVICE_FAMILY"] = `"1,2"`;
         buildSettings["IPHONEOS_DEPLOYMENT_TARGET"] =
           deploymentTarget || "15.1";
       }
     }
+    setExtensionVersion(pbxProject, config);
     config.modResults = pbxProject;
     return config;
   });
@@ -148,6 +148,35 @@ export const withReactNativeBatchRichNotifications: ConfigPlugin<Props> = (
   });
 
   return newConfig;
+};
+
+/**
+ * The extension Info.plist resolves its version from $(MARKETING_VERSION) and
+ * $(CURRENT_PROJECT_VERSION). Expo writes the app version to the app Info.plist
+ * only and never touches the build settings, so without this the extension is
+ * always built as 1.0 (1) and App Store Connect reports an ITMS-90473
+ * CFBundleVersion mismatch with its containing application.
+ */
+const setExtensionVersion = (
+  pbxProject: XcodeProject,
+  config: {
+    version?: string;
+    ios?: { version?: string; buildNumber?: string };
+  },
+): void => {
+  const version = config.ios?.version || config.version || "1.0";
+  const buildNumber = config.ios?.buildNumber || "1";
+  const configs = pbxProject.pbxXCBuildConfigurationSection();
+  for (const id in configs) {
+    const buildSettings = configs[id].buildSettings;
+    if (
+      buildSettings &&
+      buildSettings["PRODUCT_NAME"] === `"${BATCH_TARGET_NAME}"`
+    ) {
+      buildSettings["MARKETING_VERSION"] = version;
+      buildSettings["CURRENT_PROJECT_VERSION"] = buildNumber;
+    }
+  }
 };
 
 const getAppTargetBuildSettings: any = (pbxProject: XcodeProject): object => {
