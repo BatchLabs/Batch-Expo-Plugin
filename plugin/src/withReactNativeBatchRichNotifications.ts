@@ -1,5 +1,7 @@
 import {
   ConfigPlugin,
+  ExportedConfigWithProps,
+  IOSConfig,
   XcodeProject,
   withPodfile,
   withXcodeProject,
@@ -16,6 +18,10 @@ import {
 } from "./constants";
 import { resolveBooleanProps } from "./helpers";
 
+const infoPlistFileName = `${BATCH_TARGET_NAME}-Info.plist`;
+const entitlementsFileName = `${BATCH_TARGET_NAME}.entitlements`;
+const notificationServiceFileName = "NotificationService.swift";
+
 export const withReactNativeBatchRichNotifications: ConfigPlugin<Props> = (
   config,
   props,
@@ -31,109 +37,12 @@ export const withReactNativeBatchRichNotifications: ConfigPlugin<Props> = (
     const pbxProject = config.modResults;
     if (pbxProject.pbxGroupByName(BATCH_TARGET_NAME)) {
       console.debug(
-        "[Batch] Batch Rich Notifications extension already added. Skipping.",
+        "[Batch] Batch Rich Notifications extension already added. Refreshing its build settings.",
       );
-      return config;
+    } else {
+      createExtensionTarget(pbxProject, config);
     }
-    const platformProjectRoot = config.modRequest.platformProjectRoot;
-    const templateRoot = path.resolve(
-      __dirname,
-      "..",
-      "..",
-      "ios",
-      "rich-notifications",
-    );
-    const extensionSourceRoot = path.join(
-      platformProjectRoot,
-      BATCH_TARGET_NAME,
-    );
-
-    const infoPlistFileName = `${BATCH_TARGET_NAME}-Info.plist`;
-    const entitlementsFileName = `${BATCH_TARGET_NAME}.entitlements`;
-    const notificationServiceFileName = "NotificationService.swift";
-
-    const entitlementsFilePath = path.posix.join(
-      BATCH_TARGET_NAME,
-      entitlementsFileName,
-    );
-
-    // Copy extension files to the project directory
-    fs.mkdirSync(extensionSourceRoot, { recursive: true });
-    for (const fileName of [
-      infoPlistFileName,
-      entitlementsFileName,
-      notificationServiceFileName,
-    ]) {
-      const sourcePath = path.join(templateRoot, fileName);
-      const destinationPath = path.join(extensionSourceRoot, fileName);
-      if (!fs.existsSync(destinationPath) && fs.existsSync(sourcePath)) {
-        fs.copyFileSync(sourcePath, destinationPath);
-      }
-    }
-
-    const objects = pbxProject.hash.project.objects;
-    // Fix to have the target dependency from the app target
-    objects["PBXTargetDependency"] = objects["PBXTargetDependency"] || {};
-    objects["PBXContainerItemProxy"] = objects["PBXContainerItemProxy"] || {};
-
-    // Add a new target
-    const batchTarget = pbxProject.addTarget(
-      BATCH_TARGET_NAME,
-      "app_extension",
-      BATCH_TARGET_NAME,
-      `${config.ios?.bundleIdentifier}.${BATCH_TARGET_NAME}`,
-    );
-
-    const batchGroup = pbxProject.addPbxGroup(
-      [notificationServiceFileName, infoPlistFileName, entitlementsFileName],
-      BATCH_TARGET_NAME,
-      BATCH_TARGET_NAME,
-    );
-    const groups = objects["PBXGroup"];
-    for (const groupUUID of Object.keys(groups)) {
-      if (
-        typeof groups[groupUUID] === "object" &&
-        groups[groupUUID].name === undefined &&
-        groups[groupUUID].path === undefined
-      ) {
-        pbxProject.addToPbxGroup(batchGroup.uuid, groupUUID);
-      }
-    }
-
-    // Add build phase
-    pbxProject.addBuildPhase(
-      [notificationServiceFileName],
-      "PBXSourcesBuildPhase",
-      "Sources",
-      batchTarget.uuid,
-    );
-
-    // Add build settings
-    const appTargetBuildSettings = getAppTargetBuildSettings(pbxProject);
-    let configs = pbxProject.pbxXCBuildConfigurationSection();
-    for (let id in configs) {
-      let buildSettings = configs[id].buildSettings;
-      if (
-        buildSettings &&
-        buildSettings["PRODUCT_NAME"] === `"${BATCH_TARGET_NAME}"`
-      ) {
-        let swiftVersion = appTargetBuildSettings["SWIFT_VERSION"];
-        let devTeam = appTargetBuildSettings["DEVELOPMENT_TEAM"];
-        let deploymentTarget =
-          appTargetBuildSettings["IPHONEOS_DEPLOYMENT_TARGET"];
-        if (devTeam) {
-          buildSettings["DEVELOPMENT_TEAM"] = devTeam;
-        }
-        buildSettings["CODE_SIGN_ENTITLEMENTS"] = `"${entitlementsFilePath}"`;
-        buildSettings["CODE_SIGN_STYLE"] = "Automatic";
-        buildSettings["CURRENT_PROJECT_VERSION"] = 1;
-        buildSettings["MARKETING_VERSION"] = "1.0";
-        buildSettings["SWIFT_VERSION"] = swiftVersion || "5.0";
-        buildSettings["TARGETED_DEVICE_FAMILY"] = `"1,2"`;
-        buildSettings["IPHONEOS_DEPLOYMENT_TARGET"] =
-          deploymentTarget || "15.1";
-      }
-    }
+    syncExtensionBuildSettings(pbxProject, config);
     config.modResults = pbxProject;
     return config;
   });
@@ -150,6 +59,139 @@ export const withReactNativeBatchRichNotifications: ConfigPlugin<Props> = (
   return newConfig;
 };
 
+/**
+ * Copies the extension sources next to the app and registers the extension
+ * target, its group and its build phase. Its build settings are applied by
+ * syncExtensionBuildSettings, which also runs on later prebuilds.
+ */
+const createExtensionTarget = (
+  pbxProject: XcodeProject,
+  config: ExportedConfigWithProps<XcodeProject>,
+): void => {
+  const templateRoot = path.resolve(
+    __dirname,
+    "..",
+    "..",
+    "ios",
+    "rich-notifications",
+  );
+  const extensionSourceRoot = path.join(
+    config.modRequest.platformProjectRoot,
+    BATCH_TARGET_NAME,
+  );
+
+  // Copy extension files to the project directory
+  fs.mkdirSync(extensionSourceRoot, { recursive: true });
+  for (const fileName of [
+    infoPlistFileName,
+    entitlementsFileName,
+    notificationServiceFileName,
+  ]) {
+    const sourcePath = path.join(templateRoot, fileName);
+    const destinationPath = path.join(extensionSourceRoot, fileName);
+    if (!fs.existsSync(destinationPath) && fs.existsSync(sourcePath)) {
+      fs.copyFileSync(sourcePath, destinationPath);
+    }
+  }
+
+  const objects = pbxProject.hash.project.objects;
+  // Fix to have the target dependency from the app target
+  objects["PBXTargetDependency"] = objects["PBXTargetDependency"] || {};
+  objects["PBXContainerItemProxy"] = objects["PBXContainerItemProxy"] || {};
+
+  // Add a new target
+  const batchTarget = pbxProject.addTarget(
+    BATCH_TARGET_NAME,
+    "app_extension",
+    BATCH_TARGET_NAME,
+    `${config.ios?.bundleIdentifier}.${BATCH_TARGET_NAME}`,
+  );
+
+  const batchGroup = pbxProject.addPbxGroup(
+    [notificationServiceFileName, infoPlistFileName, entitlementsFileName],
+    BATCH_TARGET_NAME,
+    BATCH_TARGET_NAME,
+  );
+  const groups = objects["PBXGroup"];
+  for (const groupUUID of Object.keys(groups)) {
+    if (
+      typeof groups[groupUUID] === "object" &&
+      groups[groupUUID].name === undefined &&
+      groups[groupUUID].path === undefined
+    ) {
+      pbxProject.addToPbxGroup(batchGroup.uuid, groupUUID);
+    }
+  }
+
+  // Add build phase
+  pbxProject.addBuildPhase(
+    [notificationServiceFileName],
+    "PBXSourcesBuildPhase",
+    "Sources",
+    batchTarget.uuid,
+  );
+};
+
+/**
+ * Applies every build setting the extension target needs. This runs on each
+ * prebuild and not only when the target is created, so changing the app version
+ * or its deployment target and running `expo prebuild` without `--clean` keeps
+ * the extension in sync instead of leaving stale values behind.
+ *
+ * The extension Info.plist resolves its version from $(MARKETING_VERSION) and
+ * $(CURRENT_PROJECT_VERSION). Expo writes the app version to the app Info.plist
+ * only and never touches the build settings, so without this the extension is
+ * always built as 1.0 (1) and App Store Connect reports an ITMS-90473
+ * CFBundleVersion mismatch with its containing application.
+ */
+const syncExtensionBuildSettings = (
+  pbxProject: XcodeProject,
+  config: ExportedConfigWithProps<XcodeProject>,
+): void => {
+  const entitlementsFilePath = path.posix.join(
+    BATCH_TARGET_NAME,
+    entitlementsFileName,
+  );
+  const appTargetBuildSettings = getAppTargetBuildSettings(pbxProject);
+  const swiftVersion = appTargetBuildSettings["SWIFT_VERSION"];
+  const devTeam = appTargetBuildSettings["DEVELOPMENT_TEAM"];
+  const deploymentTarget = appTargetBuildSettings["IPHONEOS_DEPLOYMENT_TARGET"];
+  // Resolved with Expo's own helpers so the extension always ends up with the
+  // exact values written to the app Info.plist, fallbacks included.
+  const version = IOSConfig.Version.getVersion(config);
+  const buildNumber = IOSConfig.Version.getBuildNumber(config);
+
+  const configs = pbxProject.pbxXCBuildConfigurationSection();
+  for (const id in configs) {
+    const buildSettings = configs[id].buildSettings;
+    if (
+      !buildSettings ||
+      unquote(buildSettings["PRODUCT_NAME"]) !== BATCH_TARGET_NAME
+    ) {
+      continue;
+    }
+    if (devTeam) {
+      buildSettings["DEVELOPMENT_TEAM"] = devTeam;
+    }
+    buildSettings["CODE_SIGN_ENTITLEMENTS"] = `"${entitlementsFilePath}"`;
+    buildSettings["CODE_SIGN_STYLE"] = "Automatic";
+    buildSettings["CURRENT_PROJECT_VERSION"] = buildNumber;
+    buildSettings["MARKETING_VERSION"] = version;
+    buildSettings["SWIFT_VERSION"] = swiftVersion || "5.0";
+    buildSettings["TARGETED_DEVICE_FAMILY"] = `"1,2"`;
+    buildSettings["IPHONEOS_DEPLOYMENT_TARGET"] = deploymentTarget || "15.1";
+  }
+};
+
+/**
+ * Build settings keep the quotes they were written with, and the tools that
+ * rewrite the project after us (CocoaPods and Xcode) drop the ones they judge
+ * unneeded. PRODUCT_NAME must therefore be compared without them, otherwise the
+ * extension configurations go unnoticed on every prebuild but the first one.
+ */
+const unquote = (value: unknown): string =>
+  typeof value === "string" ? value.replace(/^"(.*)"$/, "$1") : "";
+
 const getAppTargetBuildSettings: any = (pbxProject: XcodeProject): object => {
   const nativeTargets = pbxProject.pbxNativeTargetSection();
   const appTarget: any = Object.entries(nativeTargets).find(
@@ -165,5 +207,5 @@ const getAppTargetBuildSettings: any = (pbxProject: XcodeProject): object => {
   const configList = pbxProject.pbxXCConfigurationList()?.[appConfigListId];
   const buildConfigs = configList?.buildConfigurations || [];
   const allConfigs = pbxProject.pbxXCBuildConfigurationSection();
-  return allConfigs[buildConfigs[0].value]?.buildSettings || {};
+  return allConfigs[buildConfigs[0]?.value]?.buildSettings || {};
 };
