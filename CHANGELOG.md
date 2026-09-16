@@ -3,6 +3,7 @@ UPCOMING
 
 **Core**
 
+- Fixed an issue where the plugin overwrote the `aps-environment` entitlement set in your app configuration. It is now only added when it is missing.
 - Fixed an issue where the iOS rich notifications extension was built with a `1.0 (1)` version, which caused an `ITMS-90473` mismatch on App Store Connect. Its build settings are now refreshed from your app configuration on every prebuild.
 
 
