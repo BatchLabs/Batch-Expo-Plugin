@@ -10,6 +10,7 @@
     "lint": "eslint --no-fix \"plugin/**\"",
     "lint:fail-on-warnings": "eslint \"plugin/**\" --no-fix --max-warnings 0",
     "lint:fix": "eslint --fix \"plugin/**\" || true",
+    "test": "expo-module test plugin",
     "prepare": "expo-module prepare",
     "prepublishOnly": "expo-module prepublishOnly",
     "expo-module": "expo-module",
